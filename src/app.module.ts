@@ -5,22 +5,32 @@ import { CoffeesModule } from './coffees/coffees.module';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IamModule } from './iam/iam.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import DatabaseConfig from './config/database.config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      load: [DatabaseConfig],
+      isGlobal: true,
+    }),
     CoffeesModule,
     UsersModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: '47.120.79.246',
-      port: 5432,
-      username: 'postgres',
-      password: 'pass1234',
-      database: 'postgres',
-      autoLoadEntities: true,
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        return {
+          type: 'postgres',
+          host: configService.get('database.host'),
+          port: +configService.get('database.port'),
+          username: configService.get('database.username'),
+          password: configService.get('database.password'),
+          database: configService.get('database.database'),
+          autoLoadEntities: true,
+          synchronize: true, //turn false in prod
+        };
+      },
     }),
     IamModule,
   ],
