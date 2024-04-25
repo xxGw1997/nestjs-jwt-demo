@@ -12,16 +12,20 @@ import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 import { ActiveUser } from 'src/iam/decorators/active-user.decorator';
 import { ActiveUserData } from 'src/iam/interfaces/active-user-data.interface';
+import { Roles } from 'src/iam/authorization/decorators/role.decorator';
+import { Role } from 'src/users/enums/role.enum';
 
 @Controller('coffees')
 export class CoffeesController {
   constructor(private readonly coffeesService: CoffeesService) {}
 
+  @Roles(Role.Admin)
   @Post()
   create(@Body() createCoffeeDto: CreateCoffeeDto) {
     return this.coffeesService.create(createCoffeeDto);
   }
 
+  @Roles(Role.Admin)
   @Get()
   findAll(@ActiveUser() user: ActiveUserData) {
     return this.coffeesService.findAll();

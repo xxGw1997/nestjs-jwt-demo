@@ -15,7 +15,10 @@ import jwtConfig from '../config/jwt.config';
 import { ConfigType } from '@nestjs/config';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { RefreshTokenIdsStorage } from './refresh-token-ids.storage';
+import {
+  InvalidatedRefreshTokenError,
+  RefreshTokenIdsStorage,
+} from './refresh-token-ids.storage';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -72,7 +75,7 @@ export class AuthenticationService {
       this.signToken<Partial<ActiveUserData>>(
         user.id,
         this.jwtConfiguration.accessTokenTtl,
-        { email: user.email },
+        { email: user.email, role: user.role },
       ),
       this.signToken(user.id, this.jwtConfiguration.refreshTokenTtl, {
         refreshTokenId,
@@ -103,14 +106,16 @@ export class AuthenticationService {
         user.id,
         refreshTokenId,
       );
-      console.log(isValid);
-
       if (isValid) {
-        return this.generateTokens(user);
+        await this.refreshTokenIdsStorage.invalidate(user.id);
       } else {
         throw new Error('Refresh token is invalid');
       }
+      return this.generateTokens(user);
     } catch (error) {
+      if (error instanceof InvalidatedRefreshTokenError) {
+        throw new UnauthorizedException('Access denied');
+      }
       throw new UnauthorizedException();
     }
   }
