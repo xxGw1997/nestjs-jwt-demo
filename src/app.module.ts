@@ -5,7 +5,7 @@ import { CoffeesModule } from './coffees/coffees.module';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IamModule } from './iam/iam.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigType } from '@nestjs/config';
 import DatabaseConfig from './config/database.config';
 
 @Module({
@@ -18,15 +18,15 @@ import DatabaseConfig from './config/database.config';
     UsersModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
+      inject: [DatabaseConfig.KEY],
+      useFactory: async (databaseConfig: ConfigType<typeof DatabaseConfig>) => {
         return {
           type: 'postgres',
-          host: configService.get('database.host'),
-          port: +configService.get('database.port'),
-          username: configService.get('database.username'),
-          password: configService.get('database.password'),
-          database: configService.get('database.database'),
+          host: databaseConfig.host,
+          port: +databaseConfig.port,
+          username: databaseConfig.username,
+          password: databaseConfig.password,
+          database: databaseConfig.database,
           autoLoadEntities: true,
           synchronize: true, //turn false in prod
         };
